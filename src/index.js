@@ -16,6 +16,11 @@ app.use(morgan('dev'));
 
 // Simple authentication middleware
 const authenticate = (req, res, next) => {
+  // Skip authentication for /api endpoint
+  if (req.path === '/api') {
+    return next();
+  }
+
   const apiKey = req.headers['x-api-key'];
   const apiSecret = req.headers['x-api-secret'];
 
