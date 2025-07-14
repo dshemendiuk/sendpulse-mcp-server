@@ -37,7 +37,7 @@ const authenticate = (req, res, next) => {
 };
 
 // Routes
-app.use('/api', authenticate, require('./routes'));
+app.use('/api', require('./routes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -6,9 +6,11 @@ const dialogsRoutes = require('./dialogs');
 const toolsRoutes = require('./tools');
 
 // Mount routes
-router.use('/', toolsRoutes); // This should come first to handle the root path
-router.use('/account', accountRoutes);
-router.use('/bots', botsRoutes);
-router.use('/dialogs', dialogsRoutes);
+router.use('/', toolsRoutes); // Public endpoint, no authentication
+
+// Protected endpoints
+router.use('/account', authenticate, accountRoutes);
+router.use('/bots', authenticate, botsRoutes);
+router.use('/dialogs', authenticate, dialogsRoutes);
 
 module.exports = router;
