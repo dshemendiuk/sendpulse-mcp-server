@@ -4,7 +4,7 @@ import cors from 'cors';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { getAccountInfo, getBots, getDialogs } from './services/sendpulse';
+import { getAccountInfo, getBots, getDialogs } from './services/sendpulse.js';
 
 dotenv.config();
 

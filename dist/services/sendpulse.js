@@ -1,13 +1,5 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAccountInfo = getAccountInfo;
-exports.getBots = getBots;
-exports.getDialogs = getDialogs;
-const axios_1 = __importDefault(require("axios"));
-const form_data_1 = __importDefault(require("form-data"));
+import axios from 'axios';
+import FormData from 'form-data';
 // Base URL for SendPulse API
 const BASE_URL = 'https://api.sendpulse.com/chatbots';
 // Cache for access tokens
@@ -26,12 +18,12 @@ async function getAccessToken({ clientId, clientSecret }) {
     if (tokenCache.token && Date.now() < tokenCache.expiresAt) {
         return tokenCache.token;
     }
-    const form = new form_data_1.default();
+    const form = new FormData();
     form.append('grant_type', 'client_credentials');
     form.append('client_id', clientId);
     form.append('client_secret', clientSecret);
     try {
-        const response = await axios_1.default.post('https://api.sendpulse.com/oauth/access_token', form, {
+        const response = await axios.post('https://api.sendpulse.com/oauth/access_token', form, {
             headers: form.getHeaders()
         });
         // Cache the token (expires in 1 hour, but we'll use 50 minutes to be safe)
@@ -68,7 +60,7 @@ async function makeRequest({ method, endpoint, params = {} }, { clientId, client
         else {
             config.data = params;
         }
-        const response = await (0, axios_1.default)(config);
+        const response = await axios(config);
         return response.data;
     }
     catch (error) {
@@ -88,7 +80,7 @@ async function makeRequest({ method, endpoint, params = {} }, { clientId, client
  * @param {string} clientSecret - SendPulse API Secret
  * @returns {Promise<any>} Account information
  */
-async function getAccountInfo({ clientId, clientSecret }) {
+export async function getAccountInfo({ clientId, clientSecret }) {
     return makeRequest({ method: 'get', endpoint: '/account' }, { clientId, clientSecret });
 }
 /**
@@ -97,7 +89,7 @@ async function getAccountInfo({ clientId, clientSecret }) {
  * @param {string} clientSecret - SendPulse API Secret
  * @returns {Promise<any[]>} List of bots
  */
-async function getBots({ clientId, clientSecret }) {
+export async function getBots({ clientId, clientSecret }) {
     return makeRequest({ method: 'get', endpoint: '/bots' }, { clientId, clientSecret });
 }
 /**
@@ -111,7 +103,7 @@ async function getBots({ clientId, clientSecret }) {
  * @param {string} [params.order] - Sort order (asc/desc)
  * @returns {Promise<any>} Paginated list of dialogs
  */
-async function getDialogs({ clientId, clientSecret }, params = {}) {
+export async function getDialogs({ clientId, clientSecret }, params = {}) {
     return makeRequest({
         method: 'get',
         endpoint: '/dialogs',
@@ -123,7 +115,7 @@ async function getDialogs({ clientId, clientSecret }, params = {}) {
         }
     }, { clientId, clientSecret });
 }
-exports.default = {
+export default {
     getAccountInfo,
     getBots,
     getDialogs
