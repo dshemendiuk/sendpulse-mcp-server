@@ -1,14 +1,24 @@
-const axios = require('axios');
-const FormData = require('form-data');
+import axios from 'axios';
+import FormData from 'form-data';
 
 // Base URL for SendPulse API
 const BASE_URL = 'https://api.sendpulse.com/chatbots';
 
+interface TokenCache {
+  token: string | null;
+  expiresAt: number;
+}
+
 // Cache for access tokens
-let tokenCache = {
+let tokenCache: TokenCache = {
   token: null,
   expiresAt: 0
 };
+
+interface AuthParams {
+  clientId: string;
+  clientSecret: string;
+}
 
 /**
  * Get an access token from SendPulse API
@@ -16,10 +26,10 @@ let tokenCache = {
  * @param {string} clientSecret - SendPulse API Secret
  * @returns {Promise<string>} Access token
  */
-async function getAccessToken(clientId, clientSecret) {
+async function getAccessToken({ clientId, clientSecret }: AuthParams): Promise<string> {
   // Check if we have a valid token in cache
   if (tokenCache.token && Date.now() < tokenCache.expiresAt) {
-    return tokenCache.token;
+    return tokenCache.token!;
   }
 
   const form = new FormData();
@@ -38,23 +48,32 @@ async function getAccessToken(clientId, clientSecret) {
       expiresAt: Date.now() + (50 * 60 * 1000) // 50 minutes
     };
 
-    return tokenCache.token;
-  } catch (error) {
+    return tokenCache.token!;
+  } catch (error: any) {
     console.error('Error getting access token:', error.message);
     throw new Error('Failed to authenticate with SendPulse API');
   }
+}
+
+interface RequestOptions {
+  method: string;
+  endpoint: string;
+  params?: Record<string, any>;
 }
 
 /**
  * Make an authenticated request to SendPulse API
  * @private
  */
-async function makeRequest(method, endpoint, clientId, clientSecret, params = {}) {
+async function makeRequest(
+  { method, endpoint, params = {} }: RequestOptions,
+  { clientId, clientSecret }: AuthParams
+): Promise<any> {
   try {
-    const token = await getAccessToken(clientId, clientSecret);
+    const token = await getAccessToken({ clientId, clientSecret });
     const url = `${BASE_URL}${endpoint}`;
     
-    const config = {
+    const config: any = {
       method,
       url,
       headers: {
@@ -71,11 +90,11 @@ async function makeRequest(method, endpoint, clientId, clientSecret, params = {}
 
     const response = await axios(config);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error in SendPulse API request to ${endpoint}:`, error.message);
     if (error.response) {
       // Forward the status code and error message from SendPulse
-      const err = new Error(error.response.data.message || 'SendPulse API error');
+      const err = new Error(error.response.data.message || 'SendPulse API error') as Error & { status?: number };
       err.status = error.response.status;
       throw err;
     }
@@ -87,45 +106,58 @@ async function makeRequest(method, endpoint, clientId, clientSecret, params = {}
  * Get account information
  * @param {string} clientId - SendPulse API Key
  * @param {string} clientSecret - SendPulse API Secret
- * @returns {Promise<Object>} Account information
+ * @returns {Promise<any>} Account information
  */
-async function getAccountInfo(clientId, clientSecret) {
-  return makeRequest('get', '/account', clientId, clientSecret);
+export async function getAccountInfo({ clientId, clientSecret }: AuthParams): Promise<any> {
+  return makeRequest({ method: 'get', endpoint: '/account' }, { clientId, clientSecret });
 }
 
 /**
  * Get list of bots
  * @param {string} clientId - SendPulse API Key
  * @param {string} clientSecret - SendPulse API Secret
- * @returns {Promise<Array>} List of bots
+ * @returns {Promise<any[]>} List of bots
  */
-async function getBots(clientId, clientSecret) {
-  return makeRequest('get', '/bots', clientId, clientSecret);
+export async function getBots({ clientId, clientSecret }: AuthParams): Promise<any[]> {
+  return makeRequest({ method: 'get', endpoint: '/bots' }, { clientId, clientSecret });
 }
 
 /**
- * Get list of dialogs
+ * Get list of dialogs with pagination
  * @param {string} clientId - SendPulse API Key
  * @param {string} clientSecret - SendPulse API Secret
- * @param {Object} [options] - Query parameters
- * @param {number} [options.size] - Number of items per page
- * @param {number} [options.skip] - Number of items to skip
- * @param {string} [options.search_after] - ID of the element after which to search
- * @param {string} [options.order] - Sort order (asc/desc)
- * @returns {Promise<Object>} Paginated list of dialogs
+ * @param {Object} params - Pagination parameters
+ * @param {number} [params.size] - Number of items per page
+ * @param {number} [params.skip] - Number of items to skip
+ * @param {string} [params.search_after] - ID of the element after which to search
+ * @param {string} [params.order] - Sort order (asc/desc)
+ * @returns {Promise<any>} Paginated list of dialogs
  */
-async function getDialogs(clientId, clientSecret, options = {}) {
-  const params = {};
-  
-  if (options.size) params.size = options.size;
-  if (options.skip) params.skip = options.skip;
-  if (options.search_after) params.search_after = options.search_after;
-  if (options.order) params.order = options.order;
-  
-  return makeRequest('get', '/dialogs', clientId, clientSecret, params);
+export async function getDialogs(
+  { clientId, clientSecret }: AuthParams,
+  params: {
+    size?: number;
+    skip?: number;
+    search_after?: string;
+    order?: 'asc' | 'desc';
+  } = {}
+): Promise<any> {
+  return makeRequest(
+    {
+      method: 'get',
+      endpoint: '/dialogs',
+      params: {
+        size: params.size,
+        skip: params.skip,
+        search_after: params.search_after,
+        order: params.order || 'desc'
+      }
+    },
+    { clientId, clientSecret }
+  );
 }
 
-module.exports = {
+export default {
   getAccountInfo,
   getBots,
   getDialogs

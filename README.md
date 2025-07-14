@@ -1,26 +1,32 @@
 # SendPulse MCP Server
 
-A Message Control Protocol (MCP) server that acts as a wrapper around the SendPulse Chatbots API, providing a simplified interface for interacting with SendPulse services.
+A hybrid Model Context Protocol (MCP) server that provides both HTTP API endpoints and MCP tools for interacting with the SendPulse Chatbots API. This server allows both direct HTTP requests with header authentication and AI assistant integration via MCP.
 
 ## Features
 
-- **Authentication**: Secure authentication using SendPulse API keys
-- **Endpoints**:
-  - `GET /api/account` - Get account information
-  - `GET /api/bots` - Get list of connected bots
-  - `GET /api/dialogs` - Get list of dialogs with pagination
+- **Dual Mode Support**: Runs as either HTTP API server or MCP server
+- **Header Authentication**: Uses `x-api-key` and `x-api-secret` headers for HTTP endpoints
+- **MCP Protocol Compliance**: Standard MCP integration for AI assistants
+- **SendPulse API Integration**: Complete wrapper around SendPulse Chatbots API
+- **TypeScript Support**: Fully written in TypeScript with proper type definitions
+
+## Available Endpoints/Tools
+
+- **Account Info**: Retrieve account information including pricing plan and usage statistics
+- **Bots Management**: Get list of connected bots with their details and status  
+- **Dialogs Access**: Retrieve dialogs with pagination support
 
 ## Prerequisites
 
-- Node.js 14.x or higher
+- Node.js 18.x or higher
 - npm or yarn
-- SendPulse API credentials (API Key and API Secret)
+- SendPulse API credentials (Client ID and Client Secret)
 
 ## Installation
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/sendpulse-mcp-server.git
+   git clone <repository-url>
    cd sendpulse-mcp-server
    ```
 
@@ -29,80 +35,144 @@ A Message Control Protocol (MCP) server that acts as a wrapper around the SendPu
    npm install
    ```
 
-3. Create a `.env` file in the root directory and add your SendPulse credentials:
-   ```env
-   PORT=3000
-   NODE_ENV=development
+3. Build the TypeScript project:
+   ```bash
+   npm run build
    ```
 
 ## Usage
 
-1. Start the server:
-   ```bash
-   npm start
-   ```
-   The server will start on `http://localhost:3000` by default.
+### Mode 1: MCP Server (Default - For AI Assistants)
 
-2. Make requests to the API:
-   ```bash
-   # Get account info
-   curl -X GET http://localhost:3000/api/account \
-     -H "x-api-key: YOUR_API_KEY" \
-     -H "x-api-secret: YOUR_API_SECRET"
+Run as an MCP server for AI assistant integration:
 
-   # Get list of bots
-   curl -X GET http://localhost:3000/api/bots \
-     -H "x-api-key: YOUR_API_KEY" \
-     -H "x-api-secret: YOUR_API_SECRET"
+```bash
+# Start MCP server (default mode)
+npm start
 
-   # Get dialogs with pagination
-   curl -X GET "http://localhost:3000/api/dialogs?size=10&skip=0&order=desc" \
-     -H "x-api-key: YOUR_API_KEY" \
-     -H "x-api-secret: YOUR_API_SECRET"
-   ```
+# Or explicitly start MCP mode
+npm run start:mcp
 
-## Deployment
+# Development mode with MCP server
+npm run dev
+```
 
-### Option 1: Railway.app (Recommended for Free Tier)
+The server runs on stdio transport for MCP communication.
 
-1. Create an account on [Railway](https://railway.app/)
-2. Create a new project and select "Deploy from GitHub repo"
-3. Select your forked repository
-4. Add the following environment variables in the Railway dashboard:
-   - `PORT` (Railway will provide this)
-   - `NODE_ENV=production`
-5. Deploy the app
+#### MCP Configuration
 
-### Option 2: Render.com
+Add this server to your AI assistant's MCP configuration:
 
-1. Create an account on [Render](https://render.com/)
-2. Click "New" and select "Web Service"
-3. Connect your GitHub repository
-4. Configure the service:
-   - Name: `sendpulse-mcp-server`
-   - Region: Choose the one closest to you
-   - Branch: `main`
-   - Build Command: `npm install`
-   - Start Command: `node src/index.js`
-5. Add environment variables:
-   - `NODE_ENV=production`
-6. Click "Create Web Service"
+**Claude Desktop config:**
+```json
+{
+  "mcpServers": {
+    "sendpulse": {
+      "command": "node",
+      "args": ["/path/to/sendpulse-mcp-server/dist/index.js"]
+    }
+  }
+}
+```
 
-## API Documentation
+**Alternative MCP config:**
+```json
+{
+  "mcpServers": {
+    "sendpulse": {
+      "command": "npm",
+      "args": ["start"],
+      "cwd": "/path/to/sendpulse-mcp-server"
+    }
+  }
+}
+```
 
-### Authentication
+### Mode 2: HTTP API Server (For direct API access)
 
-All requests must include the following headers:
-- `x-api-key`: Your SendPulse API Key
-- `x-api-secret`: Your SendPulse API Secret
+Run as a traditional HTTP API server with header-based authentication:
 
-### Endpoints
+```bash
+# Start HTTP server
+npm run start:http
 
-#### GET /api/account
+# Development mode with HTTP server
+npm run dev:http
+```
 
-Get account information including pricing plan, messages, bots, contacts, etc.
+The server will run on `http://localhost:3000`.
 
-**Response:**
+#### HTTP Authentication
+
+All HTTP requests must include these headers:
+- `x-api-key`: Your SendPulse Client ID
+- `x-api-secret`: Your SendPulse Client Secret
+
+#### HTTP Endpoints
+
+**GET /api/account**
+```bash
+curl -X GET http://localhost:3000/api/account \
+  -H "x-api-key: YOUR_CLIENT_ID" \
+  -H "x-api-secret: YOUR_CLIENT_SECRET"
+```
+
+**GET /api/bots**
+```bash
+curl -X GET http://localhost:3000/api/bots \
+  -H "x-api-key: YOUR_CLIENT_ID" \
+  -H "x-api-secret: YOUR_CLIENT_SECRET"
+```
+
+**GET /api/dialogs**
+```bash
+curl -X GET "http://localhost:3000/api/dialogs?size=10&skip=0&order=desc" \
+  -H "x-api-key: YOUR_CLIENT_ID" \
+  -H "x-api-secret: YOUR_CLIENT_SECRET"
+```
+
+**GET /health** (Health check - no auth required)
+```bash
+curl -X GET http://localhost:3000/health
+```
+
+### Getting SendPulse API Credentials
+
+1. Go to [SendPulse API Settings](https://login.sendpulse.com/settings/#api)
+2. Create new API credentials if you don't have them
+3. Note down your **Client ID** and **Client Secret**
+
+## API Reference
+
+### HTTP Responses
+
+All HTTP endpoints return JSON responses in this format:
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "data": { /* API response data */ }
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "message": "Error description",
+  "error": "Detailed error information"
+}
+```
+
+### Account Information
+
+**Endpoint:** `GET /api/account`  
+**MCP Tool:** `get_account_info`
+
+Retrieves account information including pricing plan and usage statistics.
+
+**Response Example:**
 ```json
 {
   "success": true,
@@ -112,37 +182,34 @@ Get account information including pricing plan, messages, bots, contacts, etc.
       "max_bots": 1,
       "max_contacts": 1000,
       "max_messages": 10000,
-      "max_tags": 100,
-      "max_variables": 100,
-      "branding": false,
       "is_exceeded": false,
-      "is_expired": false,
-      "expired_at": "2024-12-31T23:59:59+00:00"
+      "is_expired": false
     },
     "statistics": {
       "messages": 123,
       "bots": 1,
-      "contacts": 50,
-      "variables": 5
+      "contacts": 50
     },
     "services": ["telegram", "facebook"]
   }
 }
 ```
 
-#### GET /api/bots
+### Bots Information
 
-Get a list of connected bots.
+**Endpoint:** `GET /api/bots`  
+**MCP Tool:** `get_bots`
 
-**Response:**
+Retrieves a list of connected bots with their details.
+
+**Response Example:**
 ```json
 {
   "success": true,
   "data": [
     {
-      "id": "5f8d7a6d4c3b2a1e0f9e8d7c",
+      "id": "bot_id_123",
       "channel_data": {
-        "access_token": "token123",
         "id": 123456789,
         "name": "My Bot",
         "username": "my_bot"
@@ -158,25 +225,28 @@ Get a list of connected bots.
 }
 ```
 
-#### GET /api/dialogs
+### Dialogs Information
 
-Get a list of dialogs with pagination.
+**Endpoint:** `GET /api/dialogs`  
+**MCP Tool:** `get_dialogs`
+
+Retrieves dialogs with pagination support.
 
 **Query Parameters:**
-- `size`: Number of items per page (default: 10)
-- `skip`: Number of items to skip (default: 0)
-- `search_after`: ID of the element after which to search
-- `order`: Sort order (`asc` or `desc`, default: `desc`)
+- `size` (number, optional): Number of items per page (default: 10)
+- `skip` (number, optional): Number of items to skip (default: 0)
+- `search_after` (string, optional): ID of the element after which to search
+- `order` (string, optional): Sort order - "asc" or "desc" (default: "desc")
 
-**Response:**
+**Response Example:**
 ```json
 {
   "success": true,
   "data": {
     "list": [
       {
-        "_id": "5f8d7a6d4c3b2a1e0f9e8d7c",
-        "bot_id": "5f8d7a6d4c3b2a1e0f9e8d7b",
+        "_id": "dialog_id_123",
+        "bot_id": "bot_id_123",
         "contact": {
           "id": "123456789",
           "full_name": "John Doe",
@@ -186,39 +256,123 @@ Get a list of dialogs with pagination.
           "text": "Hello, how can I help you?",
           "date": "2023-01-01T12:30:00+00:00"
         },
-        "last_outbox_message": {
-          "text": "Hi there!",
-          "date": "2023-01-01T12:25:00+00:00"
-        },
-        "service": 1,
-        "user_id": 12345,
         "inbox_unread_count": 2,
         "is_chat_opened": true,
-        "created_at": "2023-01-01T12:00:00+00:00",
-        "updated_at": "2023-01-01T12:30:00+00:00"
+        "created_at": "2023-01-01T12:00:00+00:00"
       }
     ],
-    "sort": {},
     "total": 1,
     "size": 10,
-    "search_after": null,
     "order": "desc"
   }
 }
 ```
 
+## Development
+
+### Build the project:
+```bash
+npm run build
+```
+
+### Available Scripts:
+- `npm start` - Start MCP server (default)
+- `npm run start:mcp` - Start MCP server explicitly
+- `npm run start:http` - Start HTTP server
+- `npm run dev` - Development mode (MCP server)
+- `npm run dev:http` - Development mode (HTTP server)
+
+### Project Structure:
+```
+src/
+├── index.ts          # Hybrid server with HTTP endpoints and MCP tools
+└── services/
+    └── sendpulse.ts  # SendPulse API service functions
+```
+
+## Environment Variables
+
+- `MODE` - Server mode: "mcp" (default) or "http"
+- `PORT` - HTTP server port (default: 3000, HTTP mode only)
+- `NODE_ENV` - Environment: "development" or "production"
+
+## Deployment
+
+### HTTP API Deployment
+
+The server can be deployed to any platform that supports Node.js:
+
+**Railway.app:**
+```bash
+# Set environment variables:
+# MODE=http
+# PORT=(automatic)
+```
+
+**Render.com:**
+```bash
+# Build Command: npm install && npm run build
+# Start Command: npm run start:http
+```
+
+**Docker:**
+```dockerfile
+FROM node:18
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+ENV MODE=http
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+### MCP Server Deployment
+
+For MCP usage, the server typically runs locally and is configured in the AI assistant's settings.
+
 ## Error Handling
 
-The API returns appropriate HTTP status codes along with error messages in the following format:
+### HTTP Mode
+- Returns appropriate HTTP status codes
+- Includes error details in JSON response
+- 401 for missing/invalid authentication headers
+- 500 for server errors
 
-```json
-{
-  "success": false,
-  "message": "Error message",
-  "error": "Detailed error information (in development)"
-}
-```
+### MCP Mode
+- Returns error information in MCP-compatible format
+- Includes `isError: true` flag for error responses
+- Error details included in content text
+
+## Security Notes
+
+- API credentials are validated with each request
+- HTTPS used for all SendPulse API communications
+- Credentials are not stored server-side
+- CORS enabled for web applications
+- Express security middleware included
+
+## API Documentation
+
+This server integrates with the SendPulse Chatbots API. For complete API documentation:
+https://sendpulse.com/swagger/chatbots/?lang=en
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
 ## License
 
 MIT
+
+## Support
+
+For issues related to:
+- This server: Create an issue in this repository
+- SendPulse API: Contact [SendPulse Support](https://sendpulse.com/support)
+- MCP Protocol: Visit [Model Context Protocol documentation](https://modelcontextprotocol.io)
