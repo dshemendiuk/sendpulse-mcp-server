@@ -4,6 +4,7 @@ const accountRoutes = require('./account');
 const botsRoutes = require('./bots');
 const dialogsRoutes = require('./dialogs');
 const toolsRoutes = require('./tools');
+const authenticate = require('../middleware/auth');
 
 // Mount routes
 router.use('/', toolsRoutes); // Public endpoint, no authentication
